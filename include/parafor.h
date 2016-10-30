@@ -63,7 +63,7 @@ private:
             itemindex = __sync_fetch_and_add(pcurrindex, TN);
         }
 
-        for (int itemindex = _Steal(); itemindex >= 0; itemindex = _Steal()) {
+        for (int itemindex = _Steal(); itemindex < numitems; itemindex = _Steal()) {
             _op(itemindex, tid);
         }
         
@@ -71,19 +71,14 @@ private:
     }
 
     int _Steal() {
-        int tid = 0, mintid = 0, nextitemindex = 0, minitemindex = INT_MAX;
+        int tid = 0, mintid = 0, minitemindex = INT_MAX;
         for (; tid < TN; ++tid) {
             if (minitemindex > _workers[tid].currindex) {
                 minitemindex = _workers[tid].currindex;
                 mintid = tid;
             }
-        }
-        
-        nextitemindex = __sync_fetch_and_add(&(_workers[mintid].currindex), TN);
-        if (nextitemindex >= _op.GetNumItems()) {
-            return -1;
-        }
-        return nextitemindex;
+        }   
+        return __sync_fetch_and_add(&(_workers[mintid].currindex), TN);
     }
 };
 
